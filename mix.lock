@@ -1,0 +1,2 @@
+%{"edown": {:git, "git://github.com/esl/edown.git", "4d18dc4bec89c20c0ba8cab6884ce690ca606f4a", [ref: "HEAD"]},
+  "plain_fsm": {:git, "https://github.com/uwiger/plain_fsm.git", "30a9b20c733820d74b01830b59d4bd041cf10f05", [ref: "30a9b20c733820d74b01830b59d4bd041cf10f05"]}}

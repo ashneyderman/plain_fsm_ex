@@ -5,24 +5,28 @@ defmodule PlainFsmTest do
   defmodule ExmpleFsm do
     use PlainFsm
 
-    def spawn_link(init_state) do
-      :plain_fsm.spawn_link(:s,
-         fn -> 
-            :erlang.process_flag(:trap_exit, true)
-            idle(init_state)
-         end)
+    defp do_init(init_state) do
+      :erlang.process_flag(:trap_exit, true)
+      idle(init_state)
     end
 
-    def idle(map) do
+    def spawn_link(init_state) do
+      link_fsm(fn -> do_init(init_state) end)
+    end
+
+    def spawn(init_state) do
+      spawn_fsm(fn -> do_init(init_state) end)
+    end
+
+    def idle(%{"timeout" => timeout, "events" => events} = map) do
       ereceive do 
-        :stop ->
-          :ok
+        :stop ->  :ok
         {from, ref, :stop} ->
-          send(from, {ref, map["events"]})
+          send(from, {ref, events})
           :ok
         {:event, event} ->
           idle(update_in(map["events"], fn(evts) -> [event | evts] end))
-      after map["timeout"] ->
+      after timeout ->
         idle(update_in(map["events"], fn(evts) -> [:idle | evts] end))
       end
     end

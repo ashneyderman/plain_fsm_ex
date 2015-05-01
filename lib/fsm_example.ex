@@ -3,10 +3,17 @@ defmodule FsmExample do
   require Logger
 
   def spawn_link do
-    :plain_fsm.spawn_link(__MODULE__, fn ->
-        :erlang.process_flag(:trap_exit, true)
-        idle(:mystate)
-      end)
+    link_fsm(fn ->
+                  :erlang.process_flag(:trap_exit, true)
+                  idle(:mystate)
+                 end)
+  end
+
+  def spawn do
+    spawn_fsm(fn ->
+                  :erlang.process_flag(:trap_exit, true)
+                  idle(:mystate)
+                 end)
   end
 
   def idle(s) do

@@ -2,7 +2,31 @@ defmodule PlainFsm do
 
   defmacro __using__(_) do
     quote do
+      import Kernel, except: [def: 2]
       import PlainFsm
+    end
+  end
+
+  defmacro def(definition, do: content) do
+    wdefinition = wrap_params(definition)
+    quote do
+      Kernel.def(unquote(wdefinition)) do
+        unquote(content)
+      end
+    end
+  end
+
+  defmacro link_fsm(f) do
+    module = __CALLER__.module
+    quote do
+      :plain_fsm.spawn_link(unquote(module), unquote(f))
+    end
+  end
+
+  defmacro spawn_fsm(f) do
+    module = __CALLER__.module
+    quote do
+      :plain_fsm.spawn(unquote(module), unquote(f))
     end
   end
 
@@ -16,14 +40,7 @@ defmodule PlainFsm do
       raise ArgumentError, state_fun_arity_msg(__CALLER__)
     end
 
-    state_fun_args = Keyword.keys(__CALLER__.vars)
-    unless length(state_fun_args) == 1 do
-      raise ArgumentError, matched_args_limitation_msg
-    end
-
-    [state_var] = state_fun_args
-
-    z = {state_var, [], :"Elixir"}
+    z = {:__state_param1, [], :"Elixir"}
     [exit_frag] = quote do
         {:"EXIT",__fsm_parent,__fsm_reason} ->
           :plain_fsm.parent_EXIT(__fsm_reason, var!(unquote(z)))
@@ -62,22 +79,10 @@ defmodule PlainFsm do
     "State function has to be of arity 1. Your state function is #{state_fun}/#{arity}"
   end 
 
-  defp matched_args_limitation_msg do
-    """
-    At present ereceive is not able to differentiate between matched and passed 
-    arguments, so something like this 
-      
-    def idle(%{"timeout" => t}=state) do
-      ...
-    end
-
-    is not yet possible. Please, declare your state function like so
-
-    def idle(state) do
-      %{"timeout" => t} = state
-      ...
-    end
-    """ 
+  defp wrap_params({name, ctx, [param]}) do
+    params1 = [param, {:__state_param1,ctx,nil}]
+    {name,ctx,[{:=, ctx, params1}]}
   end
+  defp wrap_params(definition), do: definition
 
 end
